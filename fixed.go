@@ -1,13 +1,13 @@
-package go_pool
+package pool
 
 import (
 	"sync"
 )
 
 type FixedPool struct {
-	waitGroup sync.WaitGroup
 	queue     chan Job
 	workers   []Worker
+	waitGroup sync.WaitGroup
 }
 
 func NewFixedPool(size int) (*FixedPool, error) {
@@ -16,7 +16,7 @@ func NewFixedPool(size int) (*FixedPool, error) {
 	}
 
 	pool := &FixedPool{
-		queue: make(chan Job),
+		queue:   make(chan Job),
 		workers: make([]Worker, size),
 	}
 	for i := 0; i < size; i++ {

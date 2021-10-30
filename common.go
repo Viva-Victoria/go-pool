@@ -1,4 +1,4 @@
-package go_pool
+package pool
 
 type Job func()
 
