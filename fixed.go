@@ -6,31 +6,61 @@ import (
 
 type FixedPool struct {
 	queue     chan Job
-	workers   []Worker
+	size      int
 	waitGroup sync.WaitGroup
 }
 
+const (
+	MaxPoolSize = 65536
+)
+
 func NewFixedPool(size int) (*FixedPool, error) {
-	if size < 1 || size > 65535 {
+	if size < 1 || size > MaxPoolSize {
 		return nil, ErrIncorrectSize
 	}
 
 	pool := &FixedPool{
-		queue:   make(chan Job),
-		workers: make([]Worker, size),
+		queue: make(chan Job),
+		size:  0,
 	}
-	for i := 0; i < size; i++ {
-		pool.waitGroup.Add(1)
-		pool.workers[i] = *NewWorker(pool.queue, func() {
-			pool.waitGroup.Done()
-		})
-	}
+
+	_, _ = pool.Expand(size)
 
 	return pool, nil
 }
 
+func (p *FixedPool) Collapse(count int) (int, error) {
+	if p.size-count < 1 {
+		return p.size, ErrIncorrectSize
+	}
+
+	for i := 0; i < count; i++ {
+		p.queue <- QuitJob
+	}
+
+	p.size -= count
+
+	return p.size, nil
+}
+
+func (p *FixedPool) Expand(count int) (int, error) {
+	if p.size+count > MaxPoolSize {
+		return p.size, ErrIncorrectSize
+	}
+
+	for i := 0; i < count; i++ {
+		worker := NewWorker(p.queue, func() {
+			p.waitGroup.Done()
+		})
+		worker.Start()
+	}
+	p.size += count
+
+	return p.size, nil
+}
+
 func (p *FixedPool) Size() int {
-	return len(p.workers)
+	return p.size
 }
 
 func (p *FixedPool) Add(job Job) {
