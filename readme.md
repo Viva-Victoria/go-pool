@@ -1,7 +1,7 @@
 # go-pool
 
 ## Install
-`go get github.com/VivaVictoria/go-pool`
+`go get github.com/Viva-Victoria/go-pool`
 
 ## Fixed pool
 You can create pool with fixed goroutines count. Pool size should be between 1 (minimal size) and 65536 (maximum size).
